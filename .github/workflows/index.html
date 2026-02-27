@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>D'ARC APK FACTORY</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        .box { border: 2px solid #238636; padding: 20px; border-radius: 10px; background: #111; }
+        textarea { width: 100%; height: 250px; background: #000; color: #0f8; border: 1px solid #333; margin: 15px 0; }
+        button { background: #238636; color: white; border: none; padding: 20px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #log { margin-top: 15px; color: #888; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🚀 ENVIAR PARA APK</h2>
+        <textarea id="code" placeholder="Cole o código HTML aqui..."></textarea>
+        <button onclick="enviar()">GERAR APK NO GITHUB</button>
+        <div id="log">Aguardando...</div>
+    </div>
+
+    <script>
+        async function enviar() {
+            const token = "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"; // Seu token do print
+            const user = "SEU_USUARIO_AQUI"; // <--- TROQUE ISSO PELO SEU USUÁRIO
+            const repo = "darc-builder-factory";
+            const code = document.getElementById('code').value;
+            const log = document.getElementById('log');
+
+            log.innerText = "Conectando...";
+            try {
+                // Pega o SHA para atualizar o arquivo
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/index.html`, {
+                    headers: { "Authorization": `token ${token}` }
+                });
+                const data = await res.json();
+
+                // Envia o novo código
+                const put = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/index.html`, {
+                    method: "PUT",
+                    headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: "Build APK",
+                        content: btoa(unescape(encodeURIComponent(code))),
+                        sha: data.sha
+                    })
+                });
+
+                if(put.ok) {
+                    log.innerHTML = "✅ ENVIADO! Vá em <b>Actions</b> no seu GitHub e baixe o APK em 3 minutos.";
+                }
+            } catch (e) { log.innerText = "Erro: " + e; }
+        }
+    </script>
+</body>
+</html>
