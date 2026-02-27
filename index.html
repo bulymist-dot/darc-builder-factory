@@ -1,1 +1,283 @@
-v1
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex D'ARC | ARP-PROTOCOL v4.0</title>
+    <style>
+        :root {
+            --marinho: #ffffff;
+            --azul-claro: #00d4ff;
+            --azul-medio: #00d4ff;
+            --branco: #ffffff; 
+            --sucesso: #48bb78; 
+            --erro: #f56565;
+            --cinza: #e2e8f0; 
+            --ouro: #00d4ff;
+            --bg-page: #ebf1f5;
+            --text-dark: #2d3748;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        
+        body { background-color: var(--bg-page); height: 100vh; display: flex; overflow: hidden; color: var(--text-dark); }
+
+        .sidebar { 
+            position: fixed; top: 0; left: -170px; width: 170px; height: 100%; 
+            background: var(--bg-page); transition: 0.4s; z-index: 1000; 
+            border-right: 1px solid var(--cinza); color: var(--text-dark); overflow-y: auto;
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-header { padding: 15px 10px; text-align: center; border-bottom: 1px solid var(--cinza); }
+        .aba-item { padding: 10px; border-bottom: 1px solid var(--cinza); }
+        .aba-info { font-size: 9px; text-transform: uppercase; color: var(--azul-claro); font-weight: bold; margin-bottom: 5px; }
+        .btn-edt { width: 100%; padding: 5px; font-size: 8px; border: none; border-radius: 3px; cursor: pointer; background: var(--azul-claro); color: white; font-weight: bold; text-transform: uppercase; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; width: 100%; }
+        header { background: white; color: var(--text-dark); padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cinza); }
+        
+        main { flex: 1; overflow-y: auto; padding: 20px; }
+        .container { max-width: 750px; margin: 0 auto; }
+
+        .card { background: var(--branco); border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; border-left: 6px solid var(--azul-claro); display: none; }
+        .active-card { display: block; }
+        h2 { font-size: 13px; color: var(--text-dark); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; text-transform: uppercase; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #718096; margin-bottom: 5px; text-transform: uppercase; }
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid var(--cinza); border-radius: 6px; outline: none; font-size: 13px; color: var(--text-dark); }
+        input.campo-erro { border-color: var(--erro) !important; }
+
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .row > div { flex: 1; }
+
+        .sub-secao { background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 10px; display: none; border: 1px solid var(--cinza); }
+
+        .check-row { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+        .btn-check { flex: 1; min-width: 70px; background: #fff; border: 1px solid var(--cinza); padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 9px; font-weight: bold; color: var(--text-dark); }
+        .btn-check.active-sim { border-color: var(--sucesso); color: var(--sucesso); background: #f0fff4; }
+        .btn-check.active-nao { border-color: var(--erro); color: var(--erro); background: #fff5f5; }
+
+        .btn-registrar { width: 100%; padding: 15px; background: var(--azul-claro); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(0, 212, 255, 0.2); }
+        
+        #loading-overlay { position: fixed; inset: 0; background: rgba(235, 241, 245, 0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: var(--azul-claro); }
+        #sucesso-final { display: none; text-align: center; padding: 40px; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; z-index: 999; }
+        .overlay.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div style="font-size: 40px;">📡</div>
+        <h3 id="status-texto">SINCRONIZANDO ARP...</h3>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header"><h3 style="color: var(--azul-claro); font-size: 14px;">REGISTROS ARP</h3></div>
+        <div id="lista-abas"></div>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <div style="font-size: 22px; cursor: pointer;" onclick="toggleMenu()">☰</div>
+            <div style="font-weight: bold; color: var(--azul-claro);">D'ARC CODEX | ARP</div>
+            <div style="font-size: 9px; opacity: 0.7; font-weight: 800;">RESTRITO</div>
+        </header>
+
+        <main>
+            <div class="container">
+                <div id="sucesso-final">
+                    <h1 style="color: var(--sucesso); font-size: 2rem;">PROTOCOLADO</h1>
+                    <p style="margin: 20px 0; font-weight: bold;">DADOS ENVIADOS COM SUCESSO.</p>
+                    <button class="btn-registrar" style="background: var(--text-dark);" onclick="location.reload()">NOVO FORMULÁRIO</button>
+                </div>
+
+                <div class="card active-card" id="card-ident">
+                    <h2>🧾 IDENTIFICAÇÃO</h2>
+                    <div class="input-group"><label>Nome Completo</label><input type="text" id="nome" class="req"></div>
+                    <div class="input-group"><label>Codinome (Para Reconhecimento)</label><input type="text" id="cod" class="req"></div>
+                    <div class="row">
+                        <div class="input-group"><label>Data Nascimento</label><input type="text" id="nasc" placeholder="dd/mm/aaaa" class="req"></div>
+                        <div class="input-group"><label>Idade</label><input type="text" id="idade" class="req"></div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group"><label>Naturalidade</label><input type="text" id="nat" class="req"></div>
+                        <div class="input-group"><label>Nacionalidade</label><input type="text" id="nac" class="req"></div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group"><label>Profissão</label><input type="text" id="prof" class="req"></div>
+                        <div class="input-group"><label>Religião</label><input type="text" id="rel" class="req"></div>
+                    </div>
+                    <div class="check-container">
+                        <label>Está Namorando?</label>
+                        <div class="check-row">
+                            <div class="btn-check" id="nam-s" onclick="setSimpleCheck('namoro', 'sim', 'sub-namoro')">SIM</div>
+                            <div class="btn-check" id="nam-n" onclick="setSimpleCheck('namoro', 'nao', 'sub-namoro')">NÃO</div>
+                        </div>
+                        <div id="sub-namoro" class="sub-secao">
+                            <label>Nome do Parceiro(a)</label><input type="text" id="nome_parceiro">
+                        </div>
+                    </div>
+                    <button class="btn-registrar" onclick="proximo('card-ident', 'card-fisico', 'IDENTIFICAÇÃO')">Próxima Etapa</button>
+                </div>
+
+                <div class="card" id="card-fisico">
+                    <h2>⚖️ DADOS FÍSICOS</h2>
+                    <div class="row">
+                        <div class="input-group"><label>Altura (m)</label><input type="text" id="alt" class="req"></div>
+                        <div class="input-group"><label>Peso (kg)</label><input type="text" id="peso" class="req"></div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group"><label>Cor da Pele</label><input type="text" id="pele" class="req"></div>
+                        <div class="input-group"><label>Tipo Físico</label>
+                            <select id="tipo_fisico">
+                                <option value="Ectomorfo">Magro / Ectomorfo</option>
+                                <option value="Mesomorfo">Atlético / Mesomorfo</option>
+                                <option value="Endomorfo">Robusto / Endomorfo</option>
+                                <option value="Mediano">Misto / Mediano</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group"><label>Cor dos Olhos</label><input type="text" id="olhos" class="req"></div>
+                        <div class="input-group"><label>Cor do Cabelo</label><input type="text" id="cabelo" class="req"></div>
+                    </div>
+                    <div class="input-group"><label>Sinais Distintivos / Marcas</label>
+                        <input type="text" id="sinais" class="req">
+                    </div>
+                    <button class="btn-registrar" onclick="proximo('card-fisico', 'card-outros', 'DADOS FÍSICOS')">Próxima Etapa</button>
+                </div>
+
+                <div class="card" id="card-outros">
+                    <h2>📍 OUTROS & MOBILIDADE</h2>
+                    <div class="row">
+                        <div class="input-group"><label>Bairro</label><input type="text" id="bairro" class="req"></div>
+                        <div class="input-group"><label>Escolaridade</label><input type="text" id="escola" class="req"></div>
+                    </div>
+                    <div class="row">
+                        <div class="check-container" style="flex:1"><label>Passaporte?</label>
+                            <div class="check-row">
+                                <div class="btn-check" id="pass-s" onclick="setSimpleCheck('pass', 'sim')">SIM</div>
+                                <div class="btn-check" id="pass-n" onclick="setSimpleCheck('pass', 'nao')">NÃO</div>
+                            </div>
+                        </div>
+                        <div class="check-container" style="flex:1"><label>CNH?</label>
+                            <div class="check-row">
+                                <div class="btn-check" id="cnh-s" onclick="setSimpleCheck('cnh', 'sim', 'sub-cnh')">SIM</div>
+                                <div class="btn-check" id="cnh-n" onclick="setSimpleCheck('cnh', 'nao', 'sub-cnh')">NÃO</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sub-cnh" class="sub-secao">
+                        <label>Categorias</label><input type="text" id="cnh_cat">
+                        <label>Situação</label><input type="text" id="cnh_sit">
+                    </div>
+                    <div class="check-container"><label>🚦 Meios de Transporte:</label>
+                        <div class="check-row">
+                            <div class="btn-check" id="t-car" onclick="toggleT('carro')">CARRO</div>
+                            <div class="btn-check" id="t-mot" onclick="toggleT('moto')">MOTO</div>
+                            <div class="btn-check" id="t-bik" onclick="toggleT('bike')">BIKE</div>
+                            <div class="btn-check" id="t-bar" onclick="toggleT('barco')">BARCO</div>
+                            <div class="btn-check" id="t-ct" onclick="toggleT('cartao', 'sub-cartao')">CARTÃO</div>
+                        </div>
+                    </div>
+                    <div id="sub-cartao" class="sub-secao">
+                        <label>Detalhes do Cartão</label><input type="text" id="info_cartao">
+                    </div>
+                    <div class="input-group"><label>Modelo/Cor do Veículo</label><input type="text" id="det_veic"></div>
+                    <button class="btn-registrar" onclick="proximo('card-outros', 'FINAL', 'MOBILIDADE')">CONCLUIR E SALVAR</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let db = { transportes: {} };
+        const SERVIDOR = "https://codex-darc.onrender.com";
+
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function setSimpleCheck(key, val, subId) {
+            db[key] = val;
+            const btn = event.target;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.btn-check').forEach(b => b.classList.remove('active-sim', 'active-nao'));
+            btn.classList.add(val === 'sim' ? 'active-sim' : 'active-nao');
+            if(subId) document.getElementById(subId).style.display = (val === 'sim' ? 'block' : 'none');
+        }
+
+        function toggleT(tipo, subId) {
+            const btn = event.target;
+            btn.classList.toggle('active-sim');
+            db.transportes[tipo] = btn.classList.contains('active-sim');
+            if(subId) document.getElementById(subId).style.display = (db.transportes[tipo] ? 'block' : 'none');
+        }
+
+        function proximo(atual, prox, label) {
+            const card = document.getElementById(atual);
+            let erro = false;
+            card.querySelectorAll('input.req').forEach(i => {
+                if(!i.value.trim()) { i.classList.add('campo-erro'); erro = true; }
+                else { i.classList.remove('campo-erro'); }
+            });
+            if(erro) return;
+            card.querySelectorAll('input, select').forEach(i => { if(i.id) db[i.id] = i.value; });
+            
+            if(prox === 'FINAL') {
+                card.classList.remove('active-card');
+                document.getElementById('sucesso-final').style.display = 'block';
+                enviarTudo();
+                gerarAbaEdicao('REVISAO', 'REVISÃO GERAL');
+            } else {
+                card.classList.remove('active-card');
+                document.getElementById(prox).classList.add('active-card');
+                gerarAbaEdicao(atual, label);
+            }
+        }
+
+        function gerarAbaEdicao(id, label) {
+            const lista = document.getElementById('lista-abas');
+            if(document.querySelector(`[data-id="${id}"]`)) return;
+            const div = document.createElement('div');
+            div.className = 'aba-item';
+            div.setAttribute('data-id', id);
+            div.innerHTML = `<div class="aba-info">📂 ${label}</div>
+                             <button class="btn-edt" onclick="voltarPara('${id}')">ALTERAR DADOS</button>`;
+            lista.appendChild(div);
+        }
+
+        function voltarPara(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-card'));
+            document.getElementById('sucesso-final').style.display = 'none';
+            if(id === 'REVISAO') {
+                document.getElementById('card-ident').classList.add('active-card');
+            } else {
+                document.getElementById(id).classList.add('active-card');
+            }
+            if(window.innerWidth < 768) toggleMenu();
+        }
+
+        async function enviarTudo() {
+            const loading = document.getElementById('loading-overlay');
+            loading.style.display = 'flex';
+            let resumoTransporte = Object.entries(db.transportes).filter(([_, ativo]) => ativo).map(([nome, _]) => nome.toUpperCase()).join(", ") || "NENHUM";
+            const textoFinal = `[PROTOCOLO ARP - CODEX]\nNOME: ${db.nome}\nCODINOME: ${db.cod}\nNASCIMENTO: ${db.nasc}\nIDADE: ${db.idade}\nNATURALIDADE: ${db.nat}\nNACIONALIDADE: ${db.nac}\nPROFISSÃO: ${db.prof}\nRELIGIÃO: ${db.rel}\nNAMORANDO: ${db.namoro}\nPARCEIRO: ${db.nome_parceiro || 'N/A'}\nALTURA: ${db.alt}\nPESO: ${db.peso}\nPELE: ${db.pele}\nTIPO_FISICO: ${db.tipo_fisico}\nOLHOS: ${db.olhos}\nCABELO: ${db.cabelo}\nSINAIS: ${db.sinais}\nBAIRRO: ${db.bairro}\nESCOLARIDADE: ${db.escola}\nPASSAPORTE: ${db.pass}\nCNH: ${db.cnh}\nCAT_CNH: ${db.cnh_cat || 'N/A'}\nSIT_CNH: ${db.cnh_sit || 'N/A'}\nTRANSPORTES: ${resumoTransporte}\nCARTAO_DETALHES: ${db.info_cartao || 'N/A'}\nVEICULO_DETALHES: ${db.det_veic || 'N/A'}\n\nJSON_DATA: ${JSON.stringify(db)}`;
+            try {
+                await fetch(`${SERVIDOR}/registrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome: db.nome, agente: db.cod, conteudo: textoFinal })
+                });
+                loading.style.display = 'none';
+            } catch(e) {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
