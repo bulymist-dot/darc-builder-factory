@@ -5,51 +5,69 @@
     <title>D'ARC APK FACTORY</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
-        .box { border: 2px solid #238636; padding: 20px; border-radius: 10px; background: #111; }
-        textarea { width: 100%; height: 250px; background: #000; color: #0f8; border: 1px solid #333; margin: 15px 0; }
-        button { background: #238636; color: white; border: none; padding: 20px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; }
-        #log { margin-top: 15px; color: #888; font-size: 12px; }
+        .box { border: 2px solid #238636; padding: 20px; border-radius: 10px; background: #111; max-width: 500px; margin: auto; }
+        textarea { width: 100%; height: 250px; background: #000; color: #0f8; border: 1px solid #333; margin: 15px 0; border-radius: 5px; box-sizing: border-box; }
+        button { background: #238636; color: white; border: none; padding: 20px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; text-transform: uppercase; }
+        #log { margin-top: 15px; color: #888; font-size: 12px; background: #222; padding: 10px; border-radius: 5px; display: none; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h2>🚀 ENVIAR PARA APK</h2>
-        <textarea id="code" placeholder="Cole o código HTML aqui..."></textarea>
-        <button onclick="enviar()">GERAR APK NO GITHUB</button>
-        <div id="log">Aguardando...</div>
+        <h2 style="color: #58a6ff;">🚀 FÁBRICA D'ARC ONLINE</h2>
+        <p style="font-size: 11px;">O código será enviado para: <b>Darc-ia/darc-builder-factory</b></p>
+        
+        <textarea id="code" placeholder="Cole o código HTML do seu App aqui..."></textarea>
+        
+        <button onclick="gerarAPK()">FABRICAR MEU APK AGORA</button>
+        
+        <div id="log"></div>
     </div>
 
     <script>
-        async function enviar() {
-            const token = "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"; // Seu token do print
-            const user = "SEU_USUARIO_AQUI"; // <--- TROQUE ISSO PELO SEU USUÁRIO
+        async function gerarAPK() {
+            // DADOS EXTRAÍDOS DOS SEUS PRINTS
+            const token = "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"; 
+            const user = "Darc-ia"; 
             const repo = "darc-builder-factory";
+            
             const code = document.getElementById('code').value;
             const log = document.getElementById('log');
 
-            log.innerText = "Conectando...";
+            if(!code) return alert("Cole o código primeiro!");
+
+            log.style.display = "block";
+            log.innerText = "⏳ Conectando ao repositório Darc-ia...";
+
             try {
-                // Pega o SHA para atualizar o arquivo
+                // Busca o arquivo index.html atual para conseguir o SHA
                 const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/index.html`, {
                     headers: { "Authorization": `token ${token}` }
                 });
+                
+                if(!res.ok) throw new Error("Arquivo index.html não encontrado no GitHub. Crie ele primeiro!");
+                
                 const data = await res.json();
 
-                // Envia o novo código
+                // Envia o novo código para o GitHub
+                log.innerText = "⏳ Enviando código e disparando o servidor de APK...";
                 const put = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/index.html`, {
                     method: "PUT",
                     headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        message: "Build APK",
-                        content: btoa(unescape(encodeURIComponent(code))),
+                        message: "Build APK via Painel Darc",
+                        content: btoa(unescape(encodeURIComponent(code))), 
                         sha: data.sha
                     })
                 });
 
                 if(put.ok) {
-                    log.innerHTML = "✅ ENVIADO! Vá em <b>Actions</b> no seu GitHub e baixe o APK em 3 minutos.";
+                    log.innerHTML = "<b style='color:#0f8'>✅ ENVIADO COM SUCESSO!</b><br><br>1. Vá no seu GitHub em 'Actions'.<br>2. Espere 3 minutos ficar verde.<br>3. Baixe o 'app-debug' no final da página.";
+                } else {
+                    log.innerText = "❌ Erro ao enviar código. Verifique se o Token ainda é válido.";
                 }
-            } catch (e) { log.innerText = "Erro: " + e; }
+            } catch (e) {
+                log.innerText = "❌ ERRO: " + e.message;
+            }
         }
     </script>
 </body>
