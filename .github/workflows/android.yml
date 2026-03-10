@@ -15,9 +15,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ESSA PARTE RESOLVE O ERRO DE LICENÇA DO ANDROID
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # Comando crítico para aceitar as licenças do Android
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses || true
 
       - name: Install Cordova
         run: npm install -g cordova
@@ -28,9 +28,6 @@ jobs:
           cp index.html myApp/www/index.html
           cd myApp
           cordova platform add android@12.0.0
-          # Configura Android Antigo e Novo
-          sed -i 's/android-minSdkVersion" value="22"/android-minSdkVersion" value="21"/' config.xml
-          sed -i 's/android-targetSdkVersion" value="33"/android-targetSdkVersion" value="34"/' config.xml
           cordova build android --debug --device
 
       - name: Upload APK
