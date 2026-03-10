@@ -1,10 +1,9 @@
-name: Build Mobile Apps
+name: Build Android APK
 on:
   push:
     branches: [ main ]
 jobs:
-  # O SEU CÓDIGO DO ANDROID (Com o ajuste para versões)
-  build-android:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,31 +20,9 @@ jobs:
           cp index.html myApp/www/index.html
           cd myApp
           cordova platform add android
-          # Adicionei apenas essas duas linhas para pegar Android Antigo e Novo
-          echo '<preference name="android-minSdkVersion" value="21" />' >> config.xml
-          echo '<preference name="android-targetSdkVersion" value="34" />' >> config.xml
           cordova build android
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-android
+          name: app-debug
           path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-          
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Cordova
-        run: npm install -g cordova
-      - name: Build iOS
-        run: |
-          cordova create myApp com.bulymist.myapp MyApp
-          cp index.html myApp/www/index.html
-          cd myApp
-          cordova platform add ios
-          cordova build ios --emulator --no-sign
-      - name: Upload iOS
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-ios
-          path: myApp/platforms/ios/build/emulator/
