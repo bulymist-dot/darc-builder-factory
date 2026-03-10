@@ -30,8 +30,7 @@ jobs:
         with:
           name: app-debug-android
           path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-
-  # ADICIONEI O IPHONE SEPARADO (Para não quebrar o seu build de cima)
+          
   build-ios:
     runs-on: macos-latest
     steps:
