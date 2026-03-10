@@ -2,40 +2,36 @@ name: Build Mobile Apps
 on:
   push:
     branches: [ main ]
-
 jobs:
+  # O SEU CÓDIGO DO ANDROID (Com o ajuste para versões)
   build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      # Comando crítico para aceitar as licenças do Android
-      - name: Accept Android Licenses
-        run: yes | sdkmanager --licenses || true
-
       - name: Install Cordova
         run: npm install -g cordova
-
       - name: Build APK
         run: |
           cordova create myApp com.bulymist.myapp MyApp
           cp index.html myApp/www/index.html
           cd myApp
-          cordova platform add android@12.0.0
-          cordova build android --debug --device
-
+          cordova platform add android
+          # Adicionei apenas essas duas linhas para pegar Android Antigo e Novo
+          echo '<preference name="android-minSdkVersion" value="21" />' >> config.xml
+          echo '<preference name="android-targetSdkVersion" value="34" />' >> config.xml
+          cordova build android
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-android
           path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
 
+  # ADICIONEI O IPHONE SEPARADO (Para não quebrar o seu build de cima)
   build-ios:
     runs-on: macos-latest
     steps:
@@ -49,7 +45,7 @@ jobs:
           cd myApp
           cordova platform add ios
           cordova build ios --emulator --no-sign
-      - name: Upload iOS Payload
+      - name: Upload iOS
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-ios
