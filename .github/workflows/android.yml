@@ -1,9 +1,10 @@
-name: Build Android APK
+name: Build Mobile Apps
 on:
   push:
     branches: [ main ]
 jobs:
-  build:
+  # JOB PARA ANDROID (ANTIGO E NOVO)
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,10 +20,33 @@ jobs:
           cordova create myApp com.bulymist.myapp MyApp
           cp index.html myApp/www/index.html
           cd myApp
-          cordova platform add android
-          cordova build android
+          cordova platform add android@12.0.0
+          # Configura para rodar em Android antigo (SDK 21) e novo (SDK 34)
+          sed -i 's/android-minSdkVersion" value="22"/android-minSdkVersion" value="21"/' config.xml
+          sed -i 's/android-targetSdkVersion" value="33"/android-targetSdkVersion" value="34"/' config.xml
+          cordova build android --debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: app-debug-android
           path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+
+  # JOB PARA IPHONE (iOS)
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cordova
+        run: npm install -g cordova
+      - name: Build iOS
+        run: |
+          cordova create myApp com.bulymist.myapp MyApp
+          cp index.html myApp/www/index.html
+          cd myApp
+          cordova platform add ios
+          cordova build ios --emulator --no-sign
+      - name: Upload iOS Payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-ios
+          path: myApp/platforms/ios/build/emulator/
